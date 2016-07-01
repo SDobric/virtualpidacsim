@@ -28,7 +28,7 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
-      Graph.Compatibility.AlwaysCompatible alwaysCompatible6 = new Graph.Compatibility.AlwaysCompatible();
+      Graph.Compatibility.AlwaysCompatible alwaysCompatible9 = new Graph.Compatibility.AlwaysCompatible();
       this.showLabelsCheckBox = new System.Windows.Forms.CheckBox();
       this.graphControl = new Graph.GraphControl();
       this.compToolstrip = new System.Windows.Forms.ToolStrip();
@@ -59,7 +59,7 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
       this.graphControl.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(16)))), ((int)(((byte)(16)))), ((int)(((byte)(16)))));
-      this.graphControl.CompatibilityStrategy = alwaysCompatible6;
+      this.graphControl.CompatibilityStrategy = alwaysCompatible9;
       this.graphControl.FocusElement = null;
       this.graphControl.HighlightCompatible = true;
       this.graphControl.LargeGridStep = 128F;
