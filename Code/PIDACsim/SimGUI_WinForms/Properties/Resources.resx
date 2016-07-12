@@ -124,9 +124,6 @@
   <data name="connect" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\connect.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="example" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\me_square_small.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
   <data name="NAND" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\NAND.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
@@ -144,5 +141,14 @@
   </data>
   <data name="XOR" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\XOR.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="CLK" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\CLK.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="TGL1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\TGL1.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="TGL2" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\TGL2.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>

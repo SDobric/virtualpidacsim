@@ -13,8 +13,8 @@ namespace SimTester
     {
       ComponentDict comps = new ComponentDict();
       comps.add(new ClockComp(1, 1));
-      comps.add(new PrimitiveComp(PrimCompType.NOT, 1));
-      comps.add(new PrimitiveComp(PrimCompType.NOT, 1));
+      comps.add(new LogicalComp(LogicalCompType.NOT, 1));
+      comps.add(new LogicalComp(LogicalCompType.NOT, 1));
       comps[0].outputs[0].connectTo(comps[1].inputs[0]);
       comps[1].outputs[0].connectTo(comps[2].inputs[0]);
       Simulation sim = new Simulation(comps);

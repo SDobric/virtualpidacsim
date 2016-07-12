@@ -6,14 +6,19 @@ using System.Threading.Tasks;
 
 namespace GateSim
 {
+  public enum value { T, F, Z, U };
+
   public class Simulation
   {
-    int t;
+    public int t { get; private set; }
     public ComponentDict comps;
     //List<PrimitiveComp> inputComps;
     Dictionary<int, LinkedList<SimEvent>> eventList;
     //PriorityQueue<SimEvent> eventQueue;
 
+    public Simulation() : this(new ComponentDict())
+    {
+    }
 
     public Simulation(ComponentDict comps)
     {
@@ -35,6 +40,11 @@ namespace GateSim
     }
     */
     public void addComponent()
+    {
+
+    }
+
+    public void removeComponent()
     {
 
     }
@@ -85,7 +95,7 @@ namespace GateSim
         if (currEvent is UserInputEvent)
         {
           UserInputEvent inputEvent = ((UserInputEvent)currEvent);
-          comps[inputEvent.compId].inputs[inputEvent.inputId].currVal = inputEvent.value;
+          inputEvent.comp.inputs[inputEvent.inputId].currVal = inputEvent.value;
           Console.WriteLine("User input event handled");
         }
 
@@ -203,9 +213,9 @@ namespace GateSim
       return e;
     }
 
-    public void addUserInputEvent(int compId, int inputId, bool value)
+    public void addUserInputEvent(Component comp, int inputId, bool value)
     {
-      UserInputEvent userInputEvent = new UserInputEvent(t + 1, compId, inputId, value);
+      UserInputEvent userInputEvent = new UserInputEvent(t + 1, comp, inputId, value);
       queueEvent(userInputEvent);
       //eventQueue.Enqueue(userInputEvent);
     }

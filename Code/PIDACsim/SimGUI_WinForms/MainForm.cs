@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-//using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using Graph;
-using System.Drawing.Drawing2D;
+using System.Threading;
 using Graph.Compatibility;
 using Graph.Items;
 using GateSim;
@@ -21,6 +18,12 @@ namespace SimGUI_WinForms
 			InitializeComponent();
 
 			graphControl.CompatibilityStrategy = new AlwaysCompatible();
+
+      Simulation sim = new Simulation();
+
+      Thread simThread = new Thread(simulationThread);
+
+      simThread.Start(sim);
 
 
       /*
@@ -90,58 +93,126 @@ namespace SimGUI_WinForms
 			textureNode.AddItem(imageItem);
 			graphControl.AddNode(textureNode);
 
-			graphControl.ConnectionAdded	+= new EventHandler<AcceptNodeConnectionEventArgs>(OnConnectionAdded);
+      */
+
+      graphControl.ConnectionAdded	+= new EventHandler<AcceptNodeConnectionEventArgs>(OnConnectionAdded);
 			graphControl.ConnectionAdding	+= new EventHandler<AcceptNodeConnectionEventArgs>(OnConnectionAdding);
 			graphControl.ConnectionRemoving += new EventHandler<AcceptNodeConnectionEventArgs>(OnConnectionRemoved);
 			graphControl.ShowElementMenu	+= new EventHandler<AcceptElementLocationEventArgs>(OnShowElementMenu);
-
-			graphControl.Connect(colorItem, check1Item);
-      */
 		}
+
+    void simulationThread(object obj)
+    {
+      Simulation sim = (Simulation)obj;
+
+      while (true)
+      {
+        Thread.Sleep(1000);
+        sim.simStep();
+        Console.WriteLine(sim.t);
+      }
+    }
+
+    void uiUpdateThread(object obj)
+    {
+
+    }
+
+    void toggleClicked(object sender, NodeItemEventArgs args)
+    {
+      NodeImageItem imgItem = (NodeImageItem)sender;
+
+      if ((int)imgItem.Image.Tag == 0)
+      {
+        imgItem.Image = Properties.Resources.TGL2;
+        imgItem.Image.Tag = 1;
+      }
+      else
+      {
+        imgItem.Image = Properties.Resources.TGL1;
+        imgItem.Image.Tag = 0;
+      }
+    }
 
     void createNewAndNode(object sender, MouseEventArgs e)
     {
-      createNewNode(new PrimitiveComp(PrimCompType.AND, 0));
+      createNewNode(new LogicalComp(LogicalCompType.AND, 0));
     }
 
     void createNewOrNode(object sender, MouseEventArgs e)
     {
-      createNewNode(new PrimitiveComp(PrimCompType.OR, 0));
+      createNewNode(new LogicalComp(LogicalCompType.OR, 0));
     }
 
     void createNewNotNode(object sender, MouseEventArgs e)
     {
-      createNewNode(new PrimitiveComp(PrimCompType.NOT, 0));
+      createNewNode(new LogicalComp(LogicalCompType.NOT, 0));
     }
 
     void createNewXorNode(object sender, MouseEventArgs e)
     {
-      createNewNode(new PrimitiveComp(PrimCompType.XOR, 0));
+      createNewNode(new LogicalComp(LogicalCompType.XOR, 0));
+    }
+
+    void createNewClkNode(object sender, MouseEventArgs e)
+    {
+      createNewNode(new ClockComp(1, 0));
+    }
+
+    void createNewTglNode(object sender, MouseEventArgs e)
+    {
+      createNewNode(new UserInOutComp(UserInOutCompType.Toggle, 0));
     }
 
     void createNewNode(Component comp)
     {
       var node = new Node("");
 
-      System.Drawing.Bitmap imgBitmap = null;
+      //node.simComp = comp;
 
-      if (comp is PrimitiveComp)
+      Image imgBitmap = null;
+      EventHandler<NodeItemEventArgs> imgClickedDelegate = null;
+
+      if (comp is LogicalComp)
       {
-        PrimitiveComp primComp = (PrimitiveComp)comp;
+        LogicalComp primComp = (LogicalComp)comp;
         switch (primComp.type)
         {
-          case PrimCompType.AND:
+          case LogicalCompType.AND:
             imgBitmap = Properties.Resources.AND; break;
-          case PrimCompType.OR:
+          case LogicalCompType.OR:
             imgBitmap = Properties.Resources.OR; break;
-          case PrimCompType.NOT:
+          case LogicalCompType.NOT:
             imgBitmap = Properties.Resources.NOT; break;
-          case PrimCompType.XOR:
+          case LogicalCompType.XOR:
             imgBitmap = Properties.Resources.XOR; break;
         }
-
-        node.AddItem(new NodeImageItem(imgBitmap, 50, 25, false, false));
       }
+      else if(comp is UserInOutComp)
+      {
+        UserInOutComp inputComp = (UserInOutComp)comp;
+        switch (inputComp.type)
+        {
+          case UserInOutCompType.Toggle:
+            imgBitmap = Properties.Resources.TGL1;
+            imgBitmap.Tag = 0;
+            imgClickedDelegate = toggleClicked; break;
+        }
+      }
+      else if (comp is ClockComp)
+      {
+        imgBitmap = Properties.Resources.CLK;
+      }
+      else
+      {
+        //TODO: throw exception
+      }
+
+      NodeImageItem imgItem = new NodeImageItem(imgBitmap, 50, 25, false, false);
+
+      imgItem.Clicked += imgClickedDelegate;
+
+      node.AddItem(imgItem);
 
       for (int i = 0; i < comp.inputsLen; i++)
         node.AddItem(new NodeLabelItem("Input " + i, true, false));
@@ -157,11 +228,6 @@ namespace SimGUI_WinForms
       this.DoDragDrop(node, DragDropEffects.Copy);
 
     }
-
-		void OnColClicked(object sender, NodeItemEventArgs e)
-		{
-			MessageBox.Show("Color");
-		}
 
 		void OnConnectionRemoved(object sender, AcceptNodeConnectionEventArgs e)
 		{
@@ -219,6 +285,7 @@ namespace SimGUI_WinForms
 			e.Connection.Name = "Connection " + counter++;
 		}
 
+    /*
 		private void SomeNode_MouseDown(object sender, MouseEventArgs e)
 		{
 			var node = new Node("Some node");
@@ -228,15 +295,6 @@ namespace SimGUI_WinForms
 			node.AddItem(new NodeTextBoxItem("TEXTTEXT", false, true));
 			node.AddItem(new NodeDropDownItem(new string[] { "1", "2", "3", "4" }, 0, false, false));
 			this.DoDragDrop(node, DragDropEffects.Copy);
-		}
-
-		private void TextureNode_MouseDown(object sender, MouseEventArgs e)
-		{
-			var textureNode = new Node("Texture");
-			textureNode.Location = new Point(300, 150);
-			var imageItem = new NodeImageItem(Properties.Resources.example, 64, 64, false, true);
-			textureNode.AddItem(imageItem);
-			this.DoDragDrop(textureNode, DragDropEffects.Copy);
 		}
 
 		private void ColorNode_MouseDown(object sender, MouseEventArgs e)
@@ -269,6 +327,7 @@ namespace SimGUI_WinForms
 
 			this.DoDragDrop(colorNode, DragDropEffects.Copy);
 		}
+    */
 
 		private void OnShowLabelsChanged(object sender, EventArgs e)
 		{

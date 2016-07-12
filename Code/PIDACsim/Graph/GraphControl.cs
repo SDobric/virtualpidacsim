@@ -1541,12 +1541,14 @@ namespace Graph
 							var dragConnector = DragElement as NodeConnector;
 							if (dragConnector != null)
 							{
+                  /*
 								if (dragConnector.Node == destinationConnector.Node ||
 									DragElement.ElementType == element.ElementType)
 								{
 									element = null;
 								} else
 								{
+                */
 									if (!ConnectionIsAllowed(dragConnector, destinationConnector))
 									{
 										SetFlag(DragElement, RenderState.Incompatible, true);
@@ -1554,7 +1556,7 @@ namespace Graph
 									{
 										SetFlag(DragElement, (destinationConnector.state & (RenderState.Compatible | RenderState.Incompatible)), true);
 									}
-								}
+								//}
 							}
 						}
 						draggingOverElement = destinationConnector.Node;
@@ -1735,7 +1737,6 @@ namespace Graph
 							var inputConnector	= (NodeConnector)DragElement;
 							var outputConnector = HoverElement as NodeOutputConnector;
 							if (outputConnector != null &&
-								outputConnector.Node != inputConnector.Node &&
 								(inputConnector.state & RenderState.Compatible) != 0)
 								FocusElement = Connect(outputConnector, inputConnector);
 							needRedraw = true;
@@ -1746,7 +1747,6 @@ namespace Graph
 							var outputConnector = (NodeConnector)DragElement;
 							var inputConnector	= HoverElement as NodeInputConnector;
 							if (inputConnector != null &&
-								inputConnector.Node != outputConnector.Node &&
 								(outputConnector.state & RenderState.Compatible) != 0)
 								FocusElement = Connect(outputConnector, inputConnector);
 							needRedraw = true;

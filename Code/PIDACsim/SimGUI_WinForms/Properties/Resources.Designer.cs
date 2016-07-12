@@ -73,9 +73,9 @@ namespace SimGUI_WinForms.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap connect {
+        internal static System.Drawing.Bitmap CLK {
             get {
-                object obj = ResourceManager.GetObject("connect", resourceCulture);
+                object obj = ResourceManager.GetObject("CLK", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -83,9 +83,9 @@ namespace SimGUI_WinForms.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap example {
+        internal static System.Drawing.Bitmap connect {
             get {
-                object obj = ResourceManager.GetObject("example", resourceCulture);
+                object obj = ResourceManager.GetObject("connect", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -126,6 +126,26 @@ namespace SimGUI_WinForms.Properties {
         internal static System.Drawing.Bitmap OR {
             get {
                 object obj = ResourceManager.GetObject("OR", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap TGL1 {
+            get {
+                object obj = ResourceManager.GetObject("TGL1", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap TGL2 {
+            get {
+                object obj = ResourceManager.GetObject("TGL2", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

@@ -28,7 +28,7 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
-      Graph.Compatibility.AlwaysCompatible alwaysCompatible9 = new Graph.Compatibility.AlwaysCompatible();
+      Graph.Compatibility.AlwaysCompatible alwaysCompatible4 = new Graph.Compatibility.AlwaysCompatible();
       this.showLabelsCheckBox = new System.Windows.Forms.CheckBox();
       this.graphControl = new Graph.GraphControl();
       this.compToolstrip = new System.Windows.Forms.ToolStrip();
@@ -37,6 +37,8 @@
       this.orButton = new System.Windows.Forms.ToolStripButton();
       this.notButton = new System.Windows.Forms.ToolStripButton();
       this.xorButton = new System.Windows.Forms.ToolStripButton();
+      this.clkButton = new System.Windows.Forms.ToolStripButton();
+      this.toggleButton = new System.Windows.Forms.ToolStripButton();
       this.compToolstrip.SuspendLayout();
       this.SuspendLayout();
       // 
@@ -59,7 +61,7 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
       this.graphControl.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(16)))), ((int)(((byte)(16)))), ((int)(((byte)(16)))));
-      this.graphControl.CompatibilityStrategy = alwaysCompatible9;
+      this.graphControl.CompatibilityStrategy = alwaysCompatible4;
       this.graphControl.FocusElement = null;
       this.graphControl.HighlightCompatible = true;
       this.graphControl.LargeGridStep = 128F;
@@ -82,12 +84,14 @@
             this.andButton,
             this.orButton,
             this.notButton,
-            this.xorButton});
+            this.xorButton,
+            this.clkButton,
+            this.toggleButton});
       this.compToolstrip.Location = new System.Drawing.Point(0, 0);
       this.compToolstrip.Name = "compToolstrip";
       this.compToolstrip.Size = new System.Drawing.Size(1300, 59);
       this.compToolstrip.TabIndex = 6;
-      this.compToolstrip.Text = "toolStrip1";
+      this.compToolstrip.Text = "Component toolstrip";
       // 
       // compToolStripLabel
       // 
@@ -102,7 +106,7 @@
       this.andButton.ImageTransparentColor = System.Drawing.Color.Magenta;
       this.andButton.Name = "andButton";
       this.andButton.Size = new System.Drawing.Size(104, 56);
-      this.andButton.Text = "toolStripButton1";
+      this.andButton.Text = "AND component";
       this.andButton.MouseDown += new System.Windows.Forms.MouseEventHandler(this.createNewAndNode);
       // 
       // orButton
@@ -112,7 +116,7 @@
       this.orButton.ImageTransparentColor = System.Drawing.Color.Magenta;
       this.orButton.Name = "orButton";
       this.orButton.Size = new System.Drawing.Size(104, 56);
-      this.orButton.Text = "toolStripButton2";
+      this.orButton.Text = "OR component";
       this.orButton.MouseDown += new System.Windows.Forms.MouseEventHandler(this.createNewOrNode);
       // 
       // notButton
@@ -122,7 +126,7 @@
       this.notButton.ImageTransparentColor = System.Drawing.Color.Magenta;
       this.notButton.Name = "notButton";
       this.notButton.Size = new System.Drawing.Size(104, 56);
-      this.notButton.Text = "toolStripButton3";
+      this.notButton.Text = "NOT component";
       this.notButton.MouseDown += new System.Windows.Forms.MouseEventHandler(this.createNewNotNode);
       // 
       // xorButton
@@ -132,8 +136,28 @@
       this.xorButton.ImageTransparentColor = System.Drawing.Color.Magenta;
       this.xorButton.Name = "xorButton";
       this.xorButton.Size = new System.Drawing.Size(104, 56);
-      this.xorButton.Text = "toolStripButton4";
+      this.xorButton.Text = "XOR component";
       this.xorButton.MouseDown += new System.Windows.Forms.MouseEventHandler(this.createNewXorNode);
+      // 
+      // clkButton
+      // 
+      this.clkButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+      this.clkButton.Image = global::SimGUI_WinForms.Properties.Resources.CLK;
+      this.clkButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+      this.clkButton.Name = "clkButton";
+      this.clkButton.Size = new System.Drawing.Size(104, 56);
+      this.clkButton.Text = "Clock component";
+      this.clkButton.MouseDown += new System.Windows.Forms.MouseEventHandler(this.createNewClkNode);
+      // 
+      // toggleButton
+      // 
+      this.toggleButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+      this.toggleButton.Image = global::SimGUI_WinForms.Properties.Resources.TGL1;
+      this.toggleButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+      this.toggleButton.Name = "toggleButton";
+      this.toggleButton.Size = new System.Drawing.Size(104, 56);
+      this.toggleButton.Text = "Toggle component";
+      this.toggleButton.MouseDown += new System.Windows.Forms.MouseEventHandler(this.createNewTglNode);
       // 
       // MainForm
       // 
@@ -164,6 +188,8 @@
     private System.Windows.Forms.ToolStripLabel compToolStripLabel;
     private System.Windows.Forms.ToolStripButton notButton;
     private System.Windows.Forms.ToolStripButton xorButton;
+    private System.Windows.Forms.ToolStripButton clkButton;
+    private System.Windows.Forms.ToolStripButton toggleButton;
   }
 }
 
