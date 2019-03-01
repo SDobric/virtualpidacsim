@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 using Windows7.Multitouch.Interop;
-using System.Drawing;
+using System.Drawing; 
 
 namespace Windows7.Multitouch
 {

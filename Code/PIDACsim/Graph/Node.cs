@@ -61,8 +61,10 @@ namespace Graph
 	{
 		public string			Title			{ get { return titleItem.Title; } set { titleItem.Title = value; } }
 
-		#region Collapsed
-		internal bool			internalCollapsed;
+    public object     Comp;
+
+    #region Collapsed
+    internal bool			internalCollapsed;
 		public bool				Collapsed		
 		{ 
 			get 

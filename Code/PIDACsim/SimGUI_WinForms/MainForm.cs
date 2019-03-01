@@ -4,12 +4,13 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 using Graph;
-using System.Threading;
 using Graph.Compatibility;
 using Graph.Items;
-using GateSim;
+//using GateSim;
+using System.Net.Sockets;
+using System.Threading;
 
-namespace SimGUI_WinForms
+namespace SimGUI
 {
 	public partial class MainForm : Form
 	{
@@ -19,11 +20,11 @@ namespace SimGUI_WinForms
 
 			graphControl.CompatibilityStrategy = new AlwaysCompatible();
 
-      Simulation sim = new Simulation();
+      Thread sendThread = new Thread(SendThread);
+      Thread GUIManipThread = new Thread(GUIManipulationThread);
 
-      Thread simThread = new Thread(simulationThread);
-
-      simThread.Start(sim);
+      sendThread.Start();
+      GUIManipThread.Start();
 
 
       /*
@@ -94,15 +95,45 @@ namespace SimGUI_WinForms
 			graphControl.AddNode(textureNode);
 
       */
-
+      graphControl.NodeAdded += new EventHandler<AcceptNodeEventArgs>(NodeAdded);
+      graphControl.NodeRemoved += new EventHandler<NodeEventArgs>(NodeRemoved);
       graphControl.ConnectionAdded	+= new EventHandler<AcceptNodeConnectionEventArgs>(OnConnectionAdded);
 			graphControl.ConnectionAdding	+= new EventHandler<AcceptNodeConnectionEventArgs>(OnConnectionAdding);
 			graphControl.ConnectionRemoving += new EventHandler<AcceptNodeConnectionEventArgs>(OnConnectionRemoved);
 			graphControl.ShowElementMenu	+= new EventHandler<AcceptElementLocationEventArgs>(OnShowElementMenu);
 		}
 
-    void simulationThread(object obj)
+    void SendThread(object obj)
     {
+      Socket sock = GetSocket.ConnectSocket("127.0.0.1", 28999);
+
+      while (true)
+      {
+        UserInputEvent userEvent;
+        while (Globals.userInputEventQueue.TryDequeue(out userEvent))
+        {
+          sock.Send(Json.jsonEncode(userEvent.jsonValues));
+        }
+        Thread.Sleep(50);
+      }
+
+      //open socket
+      //accept messages
+      //decode json message
+      //pass togui handling thread
+    }
+
+    void GUIManipulationThread(object obj)
+    {
+      Socket sock = GetSocket.ConnectSocket("127.0.0.1", 27999);
+
+      //sock.Send(Encoding.ASCII.GetBytes("test"));
+
+      while (true)
+      {
+        Thread.Sleep(1000);
+      }
+      /*
       Simulation sim = (Simulation)obj;
 
       while (true)
@@ -111,14 +142,41 @@ namespace SimGUI_WinForms
         sim.simStep();
         Console.WriteLine(sim.t);
       }
+      */
     }
 
-    void uiUpdateThread(object obj)
+    void NodeAdded(object sender, AcceptNodeEventArgs args)
     {
+      Node node = args.Node;
+      Component comp = (Component)node.Comp;
+      comp.setId(Globals.lastCompId++);
 
+      UserInputEvent newEvent = new UserInputEvent(UserInputEvent.EType.ADDCOMP, comp);
+
+      Globals.userInputEventQueue.Enqueue(newEvent);
+      Globals.components.TryAdd(comp.getId(), comp);
+
+      /*
+      Console.WriteLine("Num components in comp dict " + Globals.components.Count);
+      Console.WriteLine("Num user input events in queue " + Globals.userInputEventQueue.Count);
+      */
+      Console.WriteLine(Json.jsonEncode(newEvent.jsonValues));
     }
 
-    void toggleClicked(object sender, NodeItemEventArgs args)
+    void NodeRemoved(object sender, NodeEventArgs args)
+    {
+      Node node = args.Node;
+      Component comp = (Component)node.Comp;
+
+      UserInputEvent newEvent = new UserInputEvent(UserInputEvent.EType.DELCOMP, comp);
+
+      Globals.userInputEventQueue.Enqueue(newEvent);
+      Globals.components.TryRemove(comp.getId(), out comp);
+
+      Console.WriteLine(Json.jsonEncode(newEvent.jsonValues));
+    }
+
+    void ToggleClicked(object sender, NodeItemEventArgs args)
     {
       NodeImageItem imgItem = (NodeImageItem)sender;
 
@@ -134,42 +192,54 @@ namespace SimGUI_WinForms
       }
     }
 
-    void createNewAndNode(object sender, MouseEventArgs e)
+    void ClkClicked(object sender, NodeItemEventArgs args)
     {
-      createNewNode(new LogicalComp(LogicalCompType.AND, 0));
+      NodeImageItem imgItem = (NodeImageItem)sender;
+
+      if ((int)imgItem.Image.Tag == 0)
+      {
+        imgItem.Image = Properties.Resources.CLK;
+        imgItem.Image.Tag = 1;
+      }
+      else
+      {
+        imgItem.Image = Properties.Resources.CLK;
+        imgItem.Image.Tag = 0;
+      }
     }
 
-    void createNewOrNode(object sender, MouseEventArgs e)
+    void CreateNewAndNode(object sender, MouseEventArgs e)
     {
-      createNewNode(new LogicalComp(LogicalCompType.OR, 0));
+      CreateNewNode(new LogicalComp(CompType.AND), CompType.AND);
     }
 
-    void createNewNotNode(object sender, MouseEventArgs e)
+    void CreateNewOrNode(object sender, MouseEventArgs e)
     {
-      createNewNode(new LogicalComp(LogicalCompType.NOT, 0));
+      CreateNewNode(new LogicalComp(CompType.OR), CompType.OR);
     }
 
-    void createNewXorNode(object sender, MouseEventArgs e)
+    void CreateNewNotNode(object sender, MouseEventArgs e)
     {
-      createNewNode(new LogicalComp(LogicalCompType.XOR, 0));
+      CreateNewNode(new LogicalComp(CompType.NOT), CompType.NOT);
     }
 
-    void createNewClkNode(object sender, MouseEventArgs e)
+    void CreateNewXorNode(object sender, MouseEventArgs e)
     {
-      createNewNode(new ClockComp(1, 0));
+      CreateNewNode(new LogicalComp(CompType.XOR), CompType.XOR);
     }
 
-    void createNewTglNode(object sender, MouseEventArgs e)
+    void CreateNewClkNode(object sender, MouseEventArgs e)
     {
-      createNewNode(new UserInOutComp(UserInOutCompType.Toggle, 0));
+      CreateNewNode(new InteractionComp(CompType.Clk), CompType.Clk);
     }
 
-    void createNewNode(Component comp)
+    void CreateNewTglNode(object sender, MouseEventArgs e)
     {
-      var node = new Node("");
+      CreateNewNode(new InteractionComp(CompType.Toggle), CompType.Toggle);
+    }
 
-      //node.simComp = comp;
-
+    void CreateNewNode(Component comp, CompType typek)
+    {
       Image imgBitmap = null;
       EventHandler<NodeItemEventArgs> imgClickedDelegate = null;
 
@@ -178,35 +248,37 @@ namespace SimGUI_WinForms
         LogicalComp primComp = (LogicalComp)comp;
         switch (primComp.type)
         {
-          case LogicalCompType.AND:
+          case CompType.AND:
             imgBitmap = Properties.Resources.AND; break;
-          case LogicalCompType.OR:
+          case CompType.OR:
             imgBitmap = Properties.Resources.OR; break;
-          case LogicalCompType.NOT:
+          case CompType.NOT:
             imgBitmap = Properties.Resources.NOT; break;
-          case LogicalCompType.XOR:
+          case CompType.XOR:
             imgBitmap = Properties.Resources.XOR; break;
         }
       }
-      else if(comp is UserInOutComp)
+      else if (comp is InteractionComp)
       {
-        UserInOutComp inputComp = (UserInOutComp)comp;
+        InteractionComp inputComp = (InteractionComp)comp;
         switch (inputComp.type)
         {
-          case UserInOutCompType.Toggle:
+          case CompType.Toggle:
             imgBitmap = Properties.Resources.TGL1;
             imgBitmap.Tag = 0;
-            imgClickedDelegate = toggleClicked; break;
+            imgClickedDelegate = ToggleClicked; break;
+          case CompType.Clk:
+            imgBitmap = Properties.Resources.CLK;
+            imgBitmap.Tag = 0;
+            imgClickedDelegate = ClkClicked; break;
         }
-      }
-      else if (comp is ClockComp)
-      {
-        imgBitmap = Properties.Resources.CLK;
       }
       else
       {
         //TODO: throw exception
       }
+
+      Node node = new Node("");
 
       NodeImageItem imgItem = new NodeImageItem(imgBitmap, 50, 25, false, false);
 
@@ -225,8 +297,10 @@ namespace SimGUI_WinForms
       //node.AddItem(new NodeLabelItem("Entry 3", false, true));
       //node.AddItem(new NodeTextBoxItem("TEXTTEXT", false, true));
       //node.AddItem(new NodeDropDownItem(new string[] { "1", "2", "3", "4" }, 0, false, false));
-      this.DoDragDrop(node, DragDropEffects.Copy);
 
+      node.Comp = comp;
+
+      this.DoDragDrop(node, DragDropEffects.Copy);
     }
 
 		void OnConnectionRemoved(object sender, AcceptNodeConnectionEventArgs e)
@@ -333,5 +407,33 @@ namespace SimGUI_WinForms
 		{
 			graphControl.ShowLabels = showLabelsCheckBox.Checked;
 		}
+
+    private void compToolstrip_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
+    {
+
+    }
+
+    private void compToolStripLabel_Click(object sender, EventArgs e)
+    {
+
+    }
+
+    private void StopSimulation(object sender, MouseEventArgs e)
+    {
+      if (Globals.simRunning)
+        Globals.simStopRequested = true;
+
+      UserInputEvent stopEvent = new UserInputEvent(UserInputEvent.EType.SIMSTOP);
+      Globals.userInputEventQueue.Enqueue(stopEvent);
+    }
+
+    private void StartSimulation(object sender, MouseEventArgs e)
+    {
+      if (!Globals.simRunning)
+        Globals.simStartRequested = true;
+
+      UserInputEvent startEvent = new UserInputEvent(UserInputEvent.EType.SIMSTART);
+      Globals.userInputEventQueue.Enqueue(startEvent);
+    }
   }
 }
