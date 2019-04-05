@@ -12,13 +12,23 @@ using System.Threading;
 
 namespace SimGUI
 {
-	public partial class MainForm : Form
-	{
-		public MainForm()
-		{
-			InitializeComponent();
+  public partial class MainForm : Form
+  {
+    private delegate void RefreshDelegate();
 
-			graphControl.CompatibilityStrategy = new AlwaysCompatible();
+    void RefreshControl()
+    {
+      if (this.InvokeRequired)
+        this.Invoke(new RefreshDelegate(this.RefreshControl));
+      else
+        graphControl.Refresh();
+    }
+
+    public MainForm()
+    {
+      InitializeComponent();
+
+      graphControl.CompatibilityStrategy = new AlwaysCompatible();
 
       Thread sendThread = new Thread(SendThread);
       Thread GUIManipThread = new Thread(GUIManipulationThread);
@@ -26,82 +36,13 @@ namespace SimGUI
       sendThread.Start();
       GUIManipThread.Start();
 
-
-      /*
-      var test2Node = new Node("test2");
-
-      test2Node.AddItem(new NodeLabelItem("", true, false));
-      test2Node.AddItem(new NodeTextBoxItem("test", false, true));
-
-      test2Node.Location = new Point(500, 400);
-
-      graphControl.AddNode(test2Node);
-
-
-      var testNode = new Node("test");
-      testNode.Location = new Point(500, 200);
-      Console.WriteLine("hello");
-
-      var check2Item = new NodeCheckboxItem("Check 1", true, false) { Tag = 31337 };
-      testNode.AddItem(check2Item);
-      testNode.AddItem(new NodeCheckboxItem("Check 2", true, false) { Tag = 42f });
-
-      var imageItem2 = new NodeImageItem(Properties.Resources.example, 64, 64, false, true) { Tag = 1000f };
-      testNode.AddItem(imageItem2);
-
-      graphControl.AddNode(testNode);
-
-
-
-      var someNode = new Node("My Title");
-			someNode.Location = new Point(500, 100);
-			var check1Item = new NodeCheckboxItem("Check 1", true, false) { Tag = 31337 };
-			someNode.AddItem(check1Item);
-			someNode.AddItem(new NodeCheckboxItem("Check 2", true, false) { Tag = 42f });
-			
-			graphControl.AddNode(someNode);
-
-			var colorNode = new Node("Color");
-			colorNode.Location = new Point(200, 50);
-			var redChannel		= new NodeSliderItem("R", 64.0f, 16.0f, 0, 1.0f, 0.0f, false, false);
-			var greenChannel	= new NodeSliderItem("G", 64.0f, 16.0f, 0, 1.0f, 0.0f, false, false);
-			var blueChannel		= new NodeSliderItem("B", 64.0f, 16.0f, 0, 1.0f, 0.0f, false, false);
-			var colorItem		= new NodeColorItem("Color", Color.Black, false, true) { Tag = 1337 };
-
-			EventHandler<NodeItemEventArgs> channelChangedDelegate = delegate(object sender, NodeItemEventArgs args)
-			{
-				var red = redChannel.Value;
-				var green = blueChannel.Value;
-				var blue = greenChannel.Value;
-				colorItem.Color = Color.FromArgb((int)Math.Round(red * 255), (int)Math.Round(green * 255), (int)Math.Round(blue * 255));
-			};
-			redChannel.ValueChanged		+= channelChangedDelegate;
-			greenChannel.ValueChanged	+= channelChangedDelegate;
-			blueChannel.ValueChanged	+= channelChangedDelegate;
-
-
-			colorNode.AddItem(redChannel);
-			colorNode.AddItem(greenChannel);
-			colorNode.AddItem(blueChannel);
-
-			colorItem.Clicked += new EventHandler<NodeItemEventArgs>(OnColClicked);
-			colorNode.AddItem(colorItem);
-			graphControl.AddNode(colorNode);
-
-			var textureNode = new Node("Texture");
-			textureNode.Location = new Point(300, 150);
-			var imageItem = new NodeImageItem(Properties.Resources.example, 64, 64, false, true) { Tag = 1000f };
-			textureNode.AddItem(imageItem);
-			graphControl.AddNode(textureNode);
-
-      */
       graphControl.NodeAdded += new EventHandler<AcceptNodeEventArgs>(NodeAdded);
       graphControl.NodeRemoved += new EventHandler<NodeEventArgs>(NodeRemoved);
       graphControl.ConnectionAdded	+= new EventHandler<AcceptNodeConnectionEventArgs>(OnConnectionAdded);
-			graphControl.ConnectionAdding	+= new EventHandler<AcceptNodeConnectionEventArgs>(OnConnectionAdding);
-			graphControl.ConnectionRemoving += new EventHandler<AcceptNodeConnectionEventArgs>(OnConnectionRemoved);
-			graphControl.ShowElementMenu	+= new EventHandler<AcceptElementLocationEventArgs>(OnShowElementMenu);
-		}
+      graphControl.ConnectionAdding	+= new EventHandler<AcceptNodeConnectionEventArgs>(OnConnectionAdding);
+      graphControl.ConnectionRemoving += new EventHandler<AcceptNodeConnectionEventArgs>(OnConnectionRemoved);
+      graphControl.ShowElementMenu	+= new EventHandler<AcceptElementLocationEventArgs>(OnShowElementMenu);
+    }
 
     void SendThread(object obj)
     {
@@ -114,35 +55,53 @@ namespace SimGUI
         {
           sock.Send(Json.jsonEncode(userEvent.jsonValues));
         }
-        Thread.Sleep(50);
+        Thread.Sleep(10);
       }
-
-      //open socket
-      //accept messages
-      //decode json message
-      //pass togui handling thread
     }
 
     void GUIManipulationThread(object obj)
     {
-      Socket sock = GetSocket.ConnectSocket("127.0.0.1", 27999);
+      byte[] bytes;
+      string bytesStr;
 
-      //sock.Send(Encoding.ASCII.GetBytes("test"));
-
-      while (true)
-      {
-        Thread.Sleep(1000);
-      }
-      /*
-      Simulation sim = (Simulation)obj;
+      Socket sock = GetSocket.ListenSocket(27999);
 
       while (true)
       {
-        Thread.Sleep(1000);
-        sim.simStep();
-        Console.WriteLine(sim.t);
+        bytes = new byte[1024];
+        sock.Receive(bytes);
+
+        bytesStr = Encoding.UTF8.GetString(bytes);
+
+        List<ResultMsg> msgs = Json.jsonDecode(bytesStr);
+
+        foreach(ResultMsg msg in msgs)
+        {
+          Component comp = Globals.components[msg.compId];
+
+          Node node = comp.uiNode;
+          List<NodeItem> labelItems = new List<NodeItem>();
+
+          foreach (NodeItem nodeItem in node.Items)
+            if (nodeItem is NodeLabelItem)
+              labelItems.Add(nodeItem);
+
+          foreach (NodeLabelItem nodeLabelItem in labelItems)
+          {
+            Tag tag = (Tag)(nodeLabelItem.Tag);
+
+            if (tag.type == PortType.Input)
+            {
+              nodeLabelItem.Text = msg.input[tag.id].ToString();
+            }
+            else if (tag.type == PortType.Output)
+            {
+              nodeLabelItem.Text = msg.output[tag.id].ToString();
+            }
+          }
+        }
+        RefreshControl();
       }
-      */
     }
 
     void NodeAdded(object sender, AcceptNodeEventArgs args)
@@ -160,7 +119,7 @@ namespace SimGUI
       Console.WriteLine("Num components in comp dict " + Globals.components.Count);
       Console.WriteLine("Num user input events in queue " + Globals.userInputEventQueue.Count);
       */
-      Console.WriteLine(Json.jsonEncode(newEvent.jsonValues));
+      //Console.WriteLine(Json.jsonEncode(newEvent.jsonValues));
     }
 
     void NodeRemoved(object sender, NodeEventArgs args)
@@ -173,7 +132,7 @@ namespace SimGUI
       Globals.userInputEventQueue.Enqueue(newEvent);
       Globals.components.TryRemove(comp.getId(), out comp);
 
-      Console.WriteLine(Json.jsonEncode(newEvent.jsonValues));
+      //Console.WriteLine(Json.jsonEncode(newEvent.jsonValues));
     }
 
     void ToggleClicked(object sender, NodeItemEventArgs args)
@@ -238,8 +197,9 @@ namespace SimGUI
       CreateNewNode(new InteractionComp(CompType.Toggle), CompType.Toggle);
     }
 
-    void CreateNewNode(Component comp, CompType typek)
+    void CreateNewNode(Component comp, CompType type)
     {
+      NodeLabelItem labelItem;
       Image imgBitmap = null;
       EventHandler<NodeItemEventArgs> imgClickedDelegate = null;
 
@@ -278,7 +238,7 @@ namespace SimGUI
         //TODO: throw exception
       }
 
-      Node node = new Node("");
+      Node node = new Node(Globals.lastCompId.ToString());
 
       NodeImageItem imgItem = new NodeImageItem(imgBitmap, 50, 25, false, false);
 
@@ -286,11 +246,26 @@ namespace SimGUI
 
       node.AddItem(imgItem);
 
+
+      PortType portType = PortType.Input;
+
       for (int i = 0; i < comp.inputsLen; i++)
-        node.AddItem(new NodeLabelItem("Input " + i, true, false));
+      {
+        labelItem = new NodeLabelItem("Input " + i, true, false);
+        Tag tag = new Tag(portType, i);
+        labelItem.Tag = tag;
+        node.AddItem(labelItem);
+      }
+
+      portType = PortType.Output;
 
       for (int i = 0; i < comp.outputsLen; i++)
-        node.AddItem(new NodeLabelItem("Output " + i, false, true));
+      {
+        labelItem = new NodeLabelItem("Output " + i, false, true);
+        Tag tag = new Tag(portType, i);
+        labelItem.Tag = tag;
+        node.AddItem(labelItem);
+      }
 
       //node.AddItem(new NodeLabelItem("Entry 1", true, false));
       //node.AddItem(new NodeLabelItem("Entry 2", true, false));
@@ -300,113 +275,138 @@ namespace SimGUI
 
       node.Comp = comp;
 
+      comp.uiNode = node;
+
       this.DoDragDrop(node, DragDropEffects.Copy);
     }
 
-		void OnConnectionRemoved(object sender, AcceptNodeConnectionEventArgs e)
-		{
-			//e.Cancel = true;
-		}
-
-		void OnShowElementMenu(object sender, AcceptElementLocationEventArgs e)
-		{
+    void OnShowElementMenu(object sender, AcceptElementLocationEventArgs e)
+    {
       /*
-			if (e.Element == null)
-			{
-				// Show a test menu for when you click on nothing
-				testMenuItem.Text = "(clicked on nothing)";
-				nodeMenu.Show(e.Position);
-				e.Cancel = false;
-			} else
-			if (e.Element is Node)
-			{
-				// Show a test menu for a node
-				testMenuItem.Text = ((Node)e.Element).Title;
-				nodeMenu.Show(e.Position);
-				e.Cancel = false;
-			} else
-			if (e.Element is NodeItem)
-			{
-				// Show a test menu for a nodeItem
-				testMenuItem.Text = e.Element.GetType().Name;
-				nodeMenu.Show(e.Position);
-				e.Cancel = false;
-			} else
-			{
-				// if you don't want to show a menu for this item (but perhaps show a menu for something more higher up) 
-				// then you can cancel the event
-				e.Cancel = true;
-			}
+      if (e.Element == null)
+      {
+        // Show a test menu for when you click on nothing
+        testMenuItem.Text = "(clicked on nothing)";
+        nodeMenu.Show(e.Position);
+        e.Cancel = false;
+      } else
+      if (e.Element is Node)
+      {
+        // Show a test menu for a node
+        testMenuItem.Text = ((Node)e.Element).Title;
+        nodeMenu.Show(e.Position);
+        e.Cancel = false;
+      } else
+      if (e.Element is NodeItem)
+      {
+        // Show a test menu for a nodeItem
+        testMenuItem.Text = e.Element.GetType().Name;
+        nodeMenu.Show(e.Position);
+        e.Cancel = false;
+      } else
+      {
+        // if you don't want to show a menu for this item (but perhaps show a menu for something more higher up) 
+        // then you can cancel the event
+        e.Cancel = true;
+      }
       */
-		}
+    }
 
-		void OnConnectionAdding(object sender, AcceptNodeConnectionEventArgs e)
-		{
-			//e.Cancel = true;
-		}
+    void OnConnectionAdding(object sender, AcceptNodeConnectionEventArgs e)
+    {
+      //e.Cancel = true;
+    }
 
-		static int counter = 1;
-		void OnConnectionAdded(object sender, AcceptNodeConnectionEventArgs e)
-		{
+    void OnConnectionAdded(object sender, AcceptNodeConnectionEventArgs e)
+    {
+      //Wire wire = new Wire();
+      char[] seperator = " ".ToCharArray();
+      Component outComp = (Component)e.Connection.From.Node.Comp;
+      Component inComp = (Component)e.Connection.To.Node.Comp;
+      string fromLabel = ((NodeLabelItem)(e.Connection.From.Item)).Text;
+      string toLabel = ((NodeLabelItem)(e.Connection.To.Item)).Text;
+      int connOutId = Convert.ToInt32(fromLabel.Split(seperator)[1]);
+      int connInId = Convert.ToInt32(toLabel.Split(seperator)[1]);
+      int wireId = Globals.lastConnId;
+
+      Connector connOut = outComp.outputs[connOutId];
+      Connector connIn = inComp.inputs[connInId];
+
+      Wire wire = new Wire(wireId, connIn, connOut);
+
+      Globals.wires.TryAdd(wireId, wire);
+
+      UserInputEvent newEvent = new UserInputEvent(UserInputEvent.EType.CONNECT, wire);
+
+      Globals.userInputEventQueue.Enqueue(newEvent);
+
       Console.WriteLine("Connection added");
-			//e.Cancel = true;
-			e.Connection.Name = "Connection " + counter ++;
-			e.Connection.DoubleClick += new EventHandler<NodeConnectionEventArgs>(OnConnectionDoubleClick);
-		}
+      //e.Cancel = true;
+      Globals.lastConnId++;
+      //e.Connection.Name = "Connection " + counter ++;
+      e.Connection.DoubleClick += new EventHandler<NodeConnectionEventArgs>(OnConnectionDoubleClick);
 
-		void OnConnectionDoubleClick(object sender, NodeConnectionEventArgs e)
-		{
-			e.Connection.Name = "Connection " + counter++;
-		}
+      //lastConnId++;
+    }
+
+    void OnConnectionRemoved(object sender, AcceptNodeConnectionEventArgs e)
+    {
+      //e.Cancel = true;
+    }
+
+    void OnConnectionDoubleClick(object sender, NodeConnectionEventArgs e)
+    {
+      //e.Connection.Name = "Connection " + counter++;
+    }
 
     /*
-		private void SomeNode_MouseDown(object sender, MouseEventArgs e)
-		{
-			var node = new Node("Some node");
-			node.AddItem(new NodeLabelItem("Entry 1", true, false));
-			node.AddItem(new NodeLabelItem("Entry 2", true, false));
-			node.AddItem(new NodeLabelItem("Entry 3", false, true));
-			node.AddItem(new NodeTextBoxItem("TEXTTEXT", false, true));
-			node.AddItem(new NodeDropDownItem(new string[] { "1", "2", "3", "4" }, 0, false, false));
-			this.DoDragDrop(node, DragDropEffects.Copy);
-		}
+    private void SomeNode_MouseDown(object sender, MouseEventArgs e)
+    {
+      var node = new Node("Some node");
+      node.AddItem(new NodeLabelItem("Entry 1", true, false));
+      node.AddItem(new NodeLabelItem("Entry 2", true, false));
+      node.AddItem(new NodeLabelItem("Entry 3", false, true));
+      node.AddItem(new NodeTextBoxItem("TEXTTEXT", false, true));
+      node.AddItem(new NodeDropDownItem(new string[] { "1", "2", "3", "4" }, 0, false, false));
+      this.DoDragDrop(node, DragDropEffects.Copy);
+    }
 
-		private void ColorNode_MouseDown(object sender, MouseEventArgs e)
-		{
-			var colorNode = new Node("Color");
-			colorNode.Location = new Point(200, 50);
-			var redChannel = new NodeSliderItem("R", 64.0f, 16.0f, 0, 1.0f, 0.0f, false, false);
-			var greenChannel = new NodeSliderItem("G", 64.0f, 16.0f, 0, 1.0f, 0.0f, false, false);
-			var blueChannel = new NodeSliderItem("B", 64.0f, 16.0f, 0, 1.0f, 0.0f, false, false);
-			var colorItem = new NodeColorItem("Color", Color.Black, false, true);
+    private void ColorNode_MouseDown(object sender, MouseEventArgs e)
+    {
+      var colorNode = new Node("Color");
+      colorNode.Location = new Point(200, 50);
+      var redChannel = new NodeSliderItem("R", 64.0f, 16.0f, 0, 1.0f, 0.0f, false, false);
+      var greenChannel = new NodeSliderItem("G", 64.0f, 16.0f, 0, 1.0f, 0.0f, false, false);
+      var blueChannel = new NodeSliderItem("B", 64.0f, 16.0f, 0, 1.0f, 0.0f, false, false);
+      var colorItem = new NodeColorItem("Color", Color.Black, false, true);
 
-			EventHandler<NodeItemEventArgs> channelChangedDelegate = delegate(object s, NodeItemEventArgs args)
-			{
-				var red = redChannel.Value;
-				var green = blueChannel.Value;
-				var blue = greenChannel.Value;
-				colorItem.Color = Color.FromArgb((int)Math.Round(red * 255), (int)Math.Round(green * 255), (int)Math.Round(blue * 255));
-			};
-			redChannel.ValueChanged += channelChangedDelegate;
-			greenChannel.ValueChanged += channelChangedDelegate;
-			blueChannel.ValueChanged += channelChangedDelegate;
+      EventHandler<NodeItemEventArgs> channelChangedDelegate = delegate(object s, NodeItemEventArgs args)
+      {
+        var red = redChannel.Value;
+        var green = blueChannel.Value;
+        var blue = greenChannel.Value;
+        colorItem.Color = Color.FromArgb((int)Math.Round(red * 255), (int)Math.Round(green * 255), (int)Math.Round(blue * 255));
+      };
+      redChannel.ValueChanged += channelChangedDelegate;
+      greenChannel.ValueChanged += channelChangedDelegate;
+      blueChannel.ValueChanged += channelChangedDelegate;
 
 
-			colorNode.AddItem(redChannel);
-			colorNode.AddItem(greenChannel);
-			colorNode.AddItem(blueChannel);
+      colorNode.AddItem(redChannel);
+      colorNode.AddItem(greenChannel);
+      colorNode.AddItem(blueChannel);
 
-			colorItem.Clicked += new EventHandler<NodeItemEventArgs>(OnColClicked);
-			colorNode.AddItem(colorItem);
+      colorItem.Clicked += new EventHandler<NodeItemEventArgs>(OnColClicked);
+      colorNode.AddItem(colorItem);
 
-			this.DoDragDrop(colorNode, DragDropEffects.Copy);
-		}
+      this.DoDragDrop(colorNode, DragDropEffects.Copy);
+    }
     */
 
-		private void OnShowLabelsChanged(object sender, EventArgs e)
-		{
-			graphControl.ShowLabels = showLabelsCheckBox.Checked;
-		}
+    private void OnShowLabelsChanged(object sender, EventArgs e)
+    {
+      graphControl.ShowLabels = showLabelsCheckBox.Checked;
+    }
 
     private void compToolstrip_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
     {

@@ -11,42 +11,64 @@ namespace SimGUI
     public static Socket ConnectSocket(string server, int port)
     {
       Socket s = null;
-      IPHostEntry hostEntry = null;
+      IPHostEntry hostEntry = Dns.GetHostEntry(server);
 
-      // Get host related information.
-      hostEntry = Dns.GetHostEntry(server);
+      IPAddress address = IPAddress.Parse("127.0.0.1");
+      IPEndPoint ipe = new IPEndPoint(address, port);
+      Socket tempSock = new Socket(ipe.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
-      // Loop through the AddressList to obtain the supported AddressFamily. This is to avoid
-      // an exception that occurs when the host IP Address is not compatible with the address family
-      // (typical in the IPv6 case).
-
-      foreach (IPAddress address in hostEntry.AddressList)
+      try
       {
-        IPAddress address2 = hostEntry.AddressList[1];
-        IPEndPoint ipe = new IPEndPoint(address, port);
-        Socket tempSocket =
-            new Socket(ipe.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+        tempSock.Connect(ipe);
+      }
+      catch (Exception e)
+      {
+        // TODO: Proper exception handling
+      }
 
+      if (tempSock.Connected)
+        s = tempSock;
+
+      return s;
+    }
+
+    public static Socket ListenSocket(int port)
+    {
+      // Establish the local endpoint for the socket.  
+      // Dns.GetHostName returns the name of the   
+      // host running the application.
+      IPHostEntry hostEntry = Dns.GetHostEntry("127.0.0.1");
+
+      //foreach (IPAddress address2 in hostEntry.AddressList)
+      //{
+        IPAddress address = IPAddress.Parse("127.0.0.1");
+        IPEndPoint localEndPoint = new IPEndPoint(address, port);
+
+        Socket listener = new Socket(address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+
+        // Bind the socket to the local endpoint and   
+        // listen for incoming connections.  
         try
         {
-          tempSocket.Connect(ipe);
+          listener.Bind(localEndPoint);
+          listener.Listen(10);
+
+          Socket s = listener.Accept();
+
+          return s;
+
         }
         catch (Exception e)
         {
-          // TODO: Proper exception handling
+          Console.WriteLine(e.ToString());
         }
+      //}
+      
 
-        if (tempSocket.Connected)
-        {
-          s = tempSocket;
-          break;
-        }
-        else
-        {
-          continue;
-        }
-      }
-      return s;
+      Console.WriteLine("\nPress ENTER to continue...");
+      Console.Read();
+
+      return null;
     }
 
     // This method requests the home page content for the specified server.

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Graph;
 //using GateSim;
 
-namespace SimGUI
+namespace SimGUI_Classes
 {
   using System;
   using System.Collections.Generic;
@@ -18,8 +18,8 @@ namespace SimGUI
 
   public enum ConnType { Input, Output };
   public enum CompType { Clk, Toggle, AND, OR, NOT, XOR, Compiled, Hierarchical };
-  //public enum LogicalCompType { AND, OR, NOT, XOR };
-  //public enum InteractionCompType { Clk, Toggle };
+  public enum LogicalCompType { AND, OR, NOT, XOR };
+  public enum InteractionCompType { Clk, Toggle };
   //public enum OutCompType { Led, Number };
 
 
@@ -33,29 +33,25 @@ namespace SimGUI
   public abstract class Component
   {
     protected int id;
-    public int depth;
     public int insertedAtT;
     public int propDelay;
-    public CompType type;
     public Component parent;
     public List<Connector> inputs;
     public List<Connector> outputs;
     protected int numInputs;
     protected int numOutputs;
-    public Node uiNode;
 
     //public CompType type;
 
     // TODO: Create all logic for "inserted at t"
-    public Component(CompType type)
+    public Component()
     {
-      this.type = type;
       insertedAtT = 0;
       inputs = new List<Connector>();
       outputs = new List<Connector>();
     }
 
-    public Component(Component parent, CompType type) : this(type)
+    public Component(Component parent) : this()
     {
       this.parent = parent;
     }
@@ -63,10 +59,10 @@ namespace SimGUI
     protected void initConnectors()
     {
       for (int i = 0; i < numInputs; i++)
-        inputs.Add(new Connector(i, this));
+        inputs.Add(new Connector(this));
 
       for (int i = 0; i < numOutputs; i++)
-        outputs.Add(new Connector(i, this));
+        outputs.Add(new Connector(this));
     }
 
     public void connect()
@@ -181,13 +177,17 @@ namespace SimGUI
 
   public class InteractionComp : Component
   {
-    public InteractionComp(CompType type) : base(type)
+    public InteractionCompType type;
+
+    public InteractionComp(InteractionCompType type) : base()
     {
+      this.type = type;
+
       switch (type)
       {
-        case CompType.Toggle:
+        case InteractionCompType.Toggle:
           numOutputs = 1; break;
-        case CompType.Clk:
+        case InteractionCompType.Clk:
           numOutputs = 1; break;
       }
 
@@ -197,20 +197,24 @@ namespace SimGUI
 
   public class LogicalComp : Component
   {
-    public LogicalComp(CompType type) : base(type)
+    public LogicalCompType type;
+
+    public LogicalComp(LogicalCompType type) : base()
     {
+      this.type = type;
+
       switch (type)
       {
-        case CompType.AND:
+        case LogicalCompType.AND:
           numInputs = 2;
           numOutputs = 1; break;
-        case CompType.OR:
+        case LogicalCompType.OR:
           numInputs = 2;
           numOutputs = 1; break;
-        case CompType.XOR:
+        case LogicalCompType.XOR:
           numInputs = 2;
           numOutputs = 1; break;
-        case CompType.NOT:
+        case LogicalCompType.NOT:
           numInputs = 1;
           numOutputs = 1; break;
       }
@@ -236,7 +240,7 @@ namespace SimGUI
   {
     String logicStr;
 
-    public CompiledComp(int propDelay) : base(CompType.Compiled)
+    public CompiledComp(int propDelay) : base()
     {
     }
   }
@@ -253,7 +257,7 @@ namespace SimGUI
   {
     ComponentDict comps;
 
-    public HierarchicalComp() : base(CompType.Hierarchical)
+    public HierarchicalComp() : base()
     {
       comps = new ComponentDict();
     }
@@ -271,18 +275,16 @@ namespace SimGUI
 
   public class Connector
   {
-    public int id;
     public bool currVal;
     public LinkedList<Value> prevVals;
     public Component belongsTo;
     public List<Wire> connections;
 
-    public Connector(int id, Component belongsTo)
+    public Connector(Component belongsTo)
     {
       prevVals = new LinkedList<Value>();
       connections = new List<Wire>();
       this.belongsTo = belongsTo;
-      this.id = id;
     }
 
     public void changeVal(int t, bool value)
@@ -291,7 +293,6 @@ namespace SimGUI
       currVal = value;
     }
 
-    /*
     public void connectTo(Connector conn)
     {
       Component c1Parent = belongsTo.parent;
@@ -307,7 +308,6 @@ namespace SimGUI
         // TODO: generate exception because components can not be connected
       }
     }
-    */
   }
 
   public class Value
@@ -326,13 +326,11 @@ namespace SimGUI
 
   public class Wire
   {
-    public int id;
     public Connector cIn;
     public Connector cOut;
 
-    public Wire(int id, Connector cIn, Connector cOut)
+    public Wire(Connector cIn, Connector cOut)
     {
-      this.id = id;
       this.cIn = cIn;
       this.cOut = cOut;
     }

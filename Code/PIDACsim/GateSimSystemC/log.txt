@@ -1,6 +1,2 @@
-0 s: Error: (E115) sc_signal<T> cannot have more than one driver: 
- signal `' (sc_object)
- first driver `0.body' (sc_method_process)
- second driver `1.body' (sc_method_process)
-In file: c:\repos\virtualpidacsim\code\pidacsim\systemc-2.3.2\src\sysc\communication\sc_signal.cpp:68
-In process: 1.body @ 0 s
+9 ns: Error: (E529) insert module failed: simulation running
+In file: c:\repos\virtualpidacsim\code\pidacsim\systemc-2.3.2\src\sysc\kernel\sc_module_registry.cpp:49

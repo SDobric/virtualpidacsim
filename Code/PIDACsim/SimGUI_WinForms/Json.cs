@@ -7,6 +7,14 @@ using Newtonsoft.Json;
 
 namespace SimGUI
 {
+  public class ResultMsg
+  {
+    public int compId;
+    public int time;
+    public string input;
+    public string output;
+  }
+
   class Json
   {
     public static byte[] jsonEncode(object input)
@@ -15,9 +23,20 @@ namespace SimGUI
       return Encoding.ASCII.GetBytes(encString);
     }
 
-    public static String jsonDecode(String input)
+    public static List<ResultMsg> jsonDecode(string input)
     {
-      return "";
+      input = input.TrimEnd("\0".ToCharArray());
+
+      String inputStr = input.Replace("}{", "}x{");
+
+      string[] inputs = inputStr.Split("x".ToCharArray());
+
+      List<ResultMsg> msgs = new List<ResultMsg>();
+
+      foreach(string jsonStr in inputs)
+         msgs.Add(JsonConvert.DeserializeObject<ResultMsg>(jsonStr, new JsonSerializerSettings { PreserveReferencesHandling = PreserveReferencesHandling.All }));
+
+      return msgs;
     }
   }
 }

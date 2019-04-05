@@ -9,7 +9,7 @@ namespace SimGUI
 {
   class UserInputEvent
   {
-    public enum EType { SIMSTART, SIMSTOP, ADDCOMP, DELCOMP, ADDWIRE, DELWIRE, INTERACT };
+    public enum EType { SIMSTART, SIMSTOP, ADDCOMP, DELCOMP, CONNECT, DISCONNECT, INTERACT };
 
     public struct JsonValues
     {
@@ -17,10 +17,11 @@ namespace SimGUI
       public CompType compType;
       public int compId;
       public int compDepth;
-      public int wireFromCompId;
-      public int wireToCompId;
-      public int wireFromInputId;
-      public int wireToOutputId;
+      public int wireId;
+      public int fromCompId;
+      public int toCompId;
+      public int outputId;
+      public int inputId;
       public int interactVal;
     }
 
@@ -34,6 +35,26 @@ namespace SimGUI
       jsonValues.eventType = type;
     }
 
+    public UserInputEvent(EType type, Wire wire)
+    {
+      jsonValues.wireId = wire.id;
+      jsonValues.eventType = type;
+
+      jsonValues.fromCompId = wire.cOut.belongsTo.getId();
+      jsonValues.toCompId = wire.cIn.belongsTo.getId();
+      jsonValues.outputId = wire.cOut.id;
+      jsonValues.inputId = wire.cIn.id;
+
+      switch (type)
+      {
+        case EType.CONNECT:
+          break;
+        case EType.DISCONNECT:
+          break;
+      }
+
+    }
+
     public UserInputEvent(EType type,  Component comp)
     {
       jsonValues.eventType = type;
@@ -44,16 +65,10 @@ namespace SimGUI
       switch (type)
       {
         case EType.ADDCOMP:
-          jsonValues.compDepth = comp.depth;
           this.type = type;
           break;
         case EType.DELCOMP:
-          jsonValues.compDepth = comp.depth;
           this.type = type;
-          break;
-        case EType.ADDWIRE:
-          break;
-        case EType.DELWIRE:
           break;
         case EType.INTERACT:
           break;
